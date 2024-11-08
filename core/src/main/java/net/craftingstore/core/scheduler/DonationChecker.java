@@ -23,28 +23,14 @@ public class DonationChecker implements Runnable {
             return;
         }
         if (instance.getProviderSelector().isConnected()) {
-            // Only run this runnable every 25 minutes when we are connected to a websocket.
-            long target = System.currentTimeMillis() - (25 * 60 * 1000);
+            // Only run this runnable every 30 minutes when we are connected to a websocket.
+            long target = System.currentTimeMillis() - (30 * 60 * 1000);
             if (lastRun > target) {
                 return;
             }
         }
         lastRun = System.currentTimeMillis();
-        this.instance.getLogger().debug("Checking for donations.");
-        try {
-            Donation[] donationQueue = instance.getApi().getDonationQueue().get();
-            Donation[][] chunked = ArrayUtil.splitArray(donationQueue, ExecuteDonationsJob.CHUNK_SIZE);
-            for (int i = 0; i < chunked.length; i++) {
-                Donation[] chunk = chunked[i];
-                this.instance.getLogger().debug(String.format("Creating ExecuteDonationsJob for chunk %d/%d", i + 1, chunked.length));
-                new ExecuteDonationsJob(instance, chunk);
-            }
-        } catch (CraftingStoreApiException | InterruptedException | ExecutionException e) {
-            if (instance.getLogger().isDebugging()) {
-                e.printStackTrace();
-            } else {
-                instance.getLogger().error("Failed to check for donations. If this issue persists, please contact support at https://craftingstore.net.");
-            }
-        }
+        this.instance.getLogger().debug("Checking for donations by interval.");
+        this.instance.getDonationRunner().runDonations();
     }
 }
